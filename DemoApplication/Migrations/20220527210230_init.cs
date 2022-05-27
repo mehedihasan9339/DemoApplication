@@ -16,7 +16,7 @@ namespace DemoApplication.Migrations
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     ProductCode = table.Column<string>(nullable: true),
                     Name = table.Column<string>(nullable: true),
-                    TotalQty = table.Column<int>(nullable: true)
+                    price = table.Column<decimal>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -46,7 +46,8 @@ namespace DemoApplication.Migrations
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
                     purchaseMasterId = table.Column<int>(nullable: true),
                     productId = table.Column<int>(nullable: true),
-                    quantity = table.Column<int>(nullable: true)
+                    quantity = table.Column<int>(nullable: true),
+                    totalPrice = table.Column<decimal>(nullable: true)
                 },
                 constraints: table =>
                 {

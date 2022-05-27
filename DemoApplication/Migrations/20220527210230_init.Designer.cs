@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DemoApplication.Migrations
 {
     [DbContext(typeof(databaseContext))]
-    [Migration("20220527160750_init")]
+    [Migration("20220527210230_init")]
     partial class init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,7 +31,7 @@ namespace DemoApplication.Migrations
 
                     b.Property<string>("ProductCode");
 
-                    b.Property<int?>("TotalQty");
+                    b.Property<decimal?>("price");
 
                     b.HasKey("Id");
 
@@ -49,6 +49,8 @@ namespace DemoApplication.Migrations
                     b.Property<int?>("purchaseMasterId");
 
                     b.Property<int?>("quantity");
+
+                    b.Property<decimal?>("totalPrice");
 
                     b.HasKey("Id");
 
