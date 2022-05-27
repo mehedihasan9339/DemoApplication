@@ -1,0 +1,230 @@
+﻿@model PurchaseInfoViewModel
+@{
+	ViewData["Title"] = "Index";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="card">
+	<div class="card-header">
+		<a href="javascript:void(0)" class="btn btn-primary btn-sm" id="PurchaseBtn">Purchase</a>
+		<a href="javascript:void(0)" class="btn btn-secondary btn-sm" id="HistoryBtn">History</a>
+		<span id="purchaseCode" style="color: darkgreen"></span>
+	</div>
+	<div class="card-body">
+		<div id="purchase-box" class="row">
+			<div class="col-md-4">
+				<form method="post" id="frm">
+					<div class="form-group row">
+						<label class="col-md-4">Product</label>
+						<div class="col-md-8">
+							<input type="hidden" name="Id" value="0" />
+							<select class="form-control" id="productId" name="productId">
+								<option value="0">Select</option>
+								@foreach (var item in Model.products)
+								{
+									<option value="@item.Id">@item.Name</option>
+								}
+							</select>
+						</div>
+					</div>
+
+					<div class="form-group row">
+						<label class="col-md-4">Quantity</label>
+						<div class="col-md-8">
+							<input type="number" name="quantity" id="quantity" value="1" class="form-control" />
+						</div>
+					</div>
+
+					<div class="form-group row">
+						<label class="col-md-4"></label>
+						<div class="col-md-8">
+							<a href="javascript:void(0)" onclick="Add()" class="btn btn-success btn-sm float-right">Add</a>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="col-md-8">
+				<form method="post" id="placeOrderTbl">
+					<table class="table table-bordered table-striped" id="purchaseTbl">
+						<thead>
+							<tr>
+								<th>Product</th>
+								<th style="text-align: center;">Quantity</th>
+								<th style="text-align: center;">Price</th>
+								<th style="text-align: center;">Action</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+						<tfoot>
+							<tr>
+								<th style="text-align: right;">Total</th>
+								<th style="text-align: center;"><span id="tPurchaseQty">0</span> <input type="hidden" id="totalPurchaseQty" name="totalPurchaseQty" value="" /></th>
+								<th style="text-align: right;"><span id="tPurchasePrice">0.00</span> <input type="hidden" id="totalPurchasePrice" name="totalPurchasePrice" value="" /></th>
+								<th style="text-align: center;"><a href="javascript:void(0)" id="placeOrderBtn" style="display: none;" class="btn btn-info btn-sm" onclick="SavePurchase()">Place Order</a></th>
+							</tr>
+						</tfoot>
+					</table>
+				</form>
+			</div>
+		</div>
+
+		<div id="history-box" class="row" style="display: none;">
+			<div class="col-md-12">
+				<div class="input-group mb-3">
+					<input type="text" class="form-control" placeholder="Type Purchase Code" id="PCode">
+					<div class="input-group-append">
+						<button class="btn btn-outline-primary" type="button" onclick="Search()">Search</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-md-12">
+				<table class="table table-primary table-striped" id="historyTbl" style="display: none;">
+					<thead>
+						<tr>
+							<th>Product</th>
+							<th style="text-align: center;">Quantity</th>
+							<th style="text-align: center;">Price</th>
+						</tr>
+					</thead>
+					<tbody>
+						
+					</tbody>
+					<tfoot>
+						<tr>
+							<th style="text-align: right;">Total</th>
+							<th style="text-align: center;"><span id="tQtyHistory"></span></th>
+							<th style="text-align: right;"><span id="tPriceHistory"></span></th>
+						</tr>
+					</tfoot>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+
+@section Scripts{
+	<script>
+		var serial = 1;
+		$(document).ready(function () {
+			$('#PurchaseBtn').click(function () {
+				$('#history-box').hide();
+				$('#purchase-box').show();
+
+				$('#historyTbl tbody').empty();
+				$('#historyTbl').hide();
+				$('#PCode').val('');
+			})
+			$('#HistoryBtn').click(function () {
+				$('#purchase-box').hide();
+				$('#history-box').show();
+
+				$('#purchaseCode').text('');
+				$('#PCode').focus();
+			})
+		})
+
+		function Add() {
+			var data = $('#frm').serialize();
+			$.ajax({
+				url: "/Purchase/PurchaseInfo/AddPurchase",
+				type: "post",
+				data: data,
+				success: function (response) {
+					var option = `<tr id="tr_${serial}_${response.productId}"><td>${response.productName}<input type="hidden" name="proId" value="${response.productId}" /></td>
+									<td style="text-align: center;">${response.quantity}<input type="hidden" class="qty" name="qty" value="${response.quantity}" /></td>
+									<td style="text-align: right;">${response.totalPrice}<input type="hidden" class="tPrice" name="tPrice" value="${response.totalPrice}" /></td>
+									<td style="text-align: center;"><a href="javascript:void(0)" class="btn btn-danger btn-sm" onclick="Remove('${serial}_${response.productId}')">X</a></td></tr>`
+
+					$('#purchaseTbl tbody').append(option);
+
+					serial++;
+
+					UpdatePriceAndQty();
+				},
+				error: function (err) {
+				}
+			});
+		}
+
+		function UpdatePriceAndQty() {
+			$('#placeOrderBtn').show();
+
+			var totalPrice = 0;
+			$('.tPrice').each(function () {
+				totalPrice += parseFloat($(this).val());
+			});
+			$('#tPurchasePrice').text(totalPrice);
+			$('#totalPurchasePrice').val(totalPrice);
+
+			var totalQty = 0;
+			$('.qty').each(function () {
+				totalQty += parseInt($(this).val());
+			});
+			$('#tPurchaseQty').text(totalQty);
+			$('#totalPurchaseQty').val(totalQty);
+		}
+
+		function UpdateForm() {
+			$('#productId').val(0);
+			$('#Id').val(0);
+			$('#quantity').val(0);
+			$('#purchaseTbl tbody').empty();
+			UpdatePriceAndQty();
+			$('#placeOrderBtn').hide();
+		}
+
+		function SavePurchase() {
+			var data = $('#placeOrderTbl').serialize();
+
+			$.ajax({
+				url: "/Purchase/PurchaseInfo/SavePurchase",
+				type: "post",
+				data: data,
+				success: function (response) {
+					$('#purchaseCode').html('Your Purchase Code Is ' + response + '. Please Keep It.')
+					UpdateForm();
+				},
+				error: function (err) {
+				}
+			});
+		}
+
+		function Remove(Id) {
+			$('tr#tr_' + Id).remove();
+			UpdatePriceAndQty();
+		}
+
+		function Search() {
+			var pCode = $('#PCode').val();
+
+			$.ajax({
+				url: "/Purchase/PurchaseInfo/GetPurchaseHistoryById?code=" + pCode,
+				type: 'GET',
+				dataType: 'json',
+				success: function (res) {
+					var tQty = 0;
+					var tPrice = 0;
+					var option = '';
+					$.each(res, function (i, item) {
+						tQty += item.quantity;
+						tPrice += item.totalPrice;
+
+						option += `<tr>
+									<td>${item.product?.name}</td>
+									<td style="text-align: center;">${item.quantity}</td>
+									<td style="text-align: right;">${item.totalPrice.toFixed(2)}</td>
+								</tr>`
+					})
+					$('#historyTbl tbody').empty();
+					$('#historyTbl tbody').append(option);
+
+					$('#tQtyHistory').text(tQty);
+					$('#tPriceHistory').text(tPrice.toFixed(2));
+
+					$('#historyTbl').show();
+				}
+			});
+		}
+	</script>
+}
